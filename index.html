@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>청소당번 추첨기</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+*{box-sizing:border-box}
+body{
+    min-height:100vh;
+    margin:0;
+    font-family:"Pretendard","Noto Sans KR",sans-serif;
+    background:#080b18;
+    color:white;
+    overflow-x:hidden;
+}
+body:before,body:after{
+    content:"";
+    position:fixed;
+    width:420px;height:420px;
+    border-radius:50%;
+    filter:blur(100px);
+    opacity:.3;
+    z-index:-1;
+}
+body:before{background:#6366f1;top:-180px;left:-150px}
+body:after{background:#ec4899;right:-150px;bottom:-180px}
+
+.glass{
+    background:rgba(255,255,255,.09);
+    border:1px solid rgba(255,255,255,.15);
+    backdrop-filter:blur(25px);
+    box-shadow:0 25px 70px rgba(0,0,0,.35);
+}
+.icon{
+    width:82px;height:82px;
+    display:grid;place-items:center;
+    margin:auto;
+    border-radius:25px;
+    background:linear-gradient(135deg,#6366f1,#a855f7);
+    box-shadow:0 15px 35px rgba(99,102,241,.4);
+    font-size:40px;
+}
+.result{
+    min-height:235px;
+    border-radius:25px;
+    background:rgba(0,0,0,.2);
+    border:1px solid rgba(255,255,255,.08);
+}
+.student{
+    width:88px;height:88px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:22px;
+    background:linear-gradient(145deg,#6366f1,#8b5cf6);
+    box-shadow:0 10px 25px rgba(99,102,241,.4);
+    animation:pop .5s cubic-bezier(.2,1.5,.5,1);
+    transition:.2s;
+}
+.student:hover{transform:translateY(-7px) scale(1.05)}
+.num{font-size:28px;font-weight:900}
+.unit{font-size:12px;opacity:.75}
+.draw{
+    border:0;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    box-shadow:0 12px 30px rgba(99,102,241,.4);
+    transition:.25s;
+}
+.draw:hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 40px rgba(99,102,241,.6);
+}
+.spin{animation:spin .7s linear infinite}
+@keyframes pop{
+    from{opacity:0;transform:scale(.3)}
+    to{opacity:1;transform:scale(1)}
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stat{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container py-5">
+<div class="row justify-content-center">
+<div class="col-12 col-md-10 col-lg-8">
+
+<div class="glass rounded-[32px] p-4 p-md-5">
+
+    <!-- 제목 -->
+    <header class="text-center mb-4">
+        <div class="icon mb-4">🧹</div>
+
+        <h1 class="display-5 fw-bold mb-2">
+            청소당번 추첨기
+        </h1>
+
+        <p class="text-white-50 mb-0">
+            공정한 랜덤 추첨으로 오늘의 청소당번을 선정합니다
+        </p>
+    </header>
+
+    <!-- 정보 -->
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <div class="stat rounded-4 p-3 text-center">
+                <div class="small text-white-50">전체 학생</div>
+                <div class="fs-3 fw-bold">30명</div>
+            </div>
+        </div>
+
+        <div class="col-6">
+            <div class="stat rounded-4 p-3 text-center">
+                <div class="small text-white-50">선정 인원</div>
+                <div class="fs-3 fw-bold text-indigo-300">5명</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 결과 -->
+    <section id="resultBox"
+        class="result d-flex align-items-center justify-content-center p-4 mb-4">
+
+        <div id="empty" class="text-center">
+            <div class="text-6xl mb-3">🎲</div>
+            <p class="text-white-50 mb-0">
+                아래 버튼을 눌러 추첨을 시작하세요
+            </p>
+        </div>
+
+        <div id="result"
+            class="d-none flex-wrap justify-content-center gap-3">
+        </div>
+    </section>
+
+    <!-- 버튼 -->
+    <button id="draw"
+        class="draw btn btn-lg w-100 rounded-4 py-3 text-white fw-bold">
+
+        <i class="bi bi-shuffle me-2"></i>
+        청소당번 뽑기
+
+    </button>
+
+    <div class="text-center mt-4">
+        <small class="text-white-50">
+            <i class="bi bi-shield-check me-1"></i>
+            1번 ~ 30번 중 중복 없이 5명 선정
+        </small>
+    </div>
+
+</div>
+
+<p class="text-center text-white-50 mt-4 small">
+    Random Cleaning Duty Picker
+</p>
+
+</div>
+</div>
+</div>
+
+<script>
+const draw=document.getElementById("draw");
+const result=document.getElementById("result");
+const empty=document.getElementById("empty");
+
+const students=Array.from({length:30},(_,i)=>i+1);
+
+function shuffle(arr){
+    arr=[...arr];
+    for(let i=arr.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function showStudents(numbers){
+    result.innerHTML="";
+
+    numbers.forEach((n,i)=>{
+        const el=document.createElement("div");
+        el.className="student";
+        el.style.animationDelay=`${i*80}ms`;
+        el.innerHTML=`
+            <span class="num">${n}</span>
+            <span class="unit">번</span>
+        `;
+        result.appendChild(el);
+    });
+}
+
+function wait(ms){
+    return new Promise(r=>setTimeout(r,ms));
+}
+
+draw.addEventListener("click",async()=>{
+
+    draw.disabled=true;
+    draw.innerHTML=`
+        <i class="bi bi-arrow-repeat spin me-2"></i>
+        추첨 중...
+    `;
+
+    empty.classList.add("d-none");
+    result.classList.remove("d-none");
+
+    // 추첨 연출
+    for(let i=0;i<12;i++){
+        showStudents(shuffle(students).slice(0,5));
+        await wait(90);
+    }
+
+    // 최종 당첨자
+    const winners=shuffle(students)
+        .slice(0,5)
+        .sort((a,b)=>a-b);
+
+    showStudents(winners);
+
+    draw.disabled=false;
+    draw.innerHTML=`
+        <i class="bi bi-shuffle me-2"></i>
+        다시 뽑기
+    `;
+
+    // SweetAlert2
+    await wait(300);
+
+    Swal.fire({
+        title:"🎉 추첨 완료!",
+        html:`
+            <p class="mb-3">오늘의 청소당번은</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                ${winners.map(n=>`
+                    <span style="
+                        display:inline-flex;
+                        align-items:center;
+                        justify-content:center;
+                        width:55px;height:55px;
+                        border-radius:15px;
+                        color:white;
+                        font-weight:800;
+                        font-size:18px;
+                        background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                    ">${n}번</span>
+                `).join("")}
+            </div>
+        `,
+        icon:"success",
+        confirmButtonText:"확인!",
+        confirmButtonColor:"#6366f1",
+        background:"#fff",
+        backdrop:"rgba(8,11,24,.8)"
+    });
+});
+</script>
+
+</body>
+</html>
