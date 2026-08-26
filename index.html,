@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>핀볼 물리 추첨 시스템</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #05080e;
+    color: white;
+    font-family: Arial, "Malgun Gothic", sans-serif;
+    text-align: center;
+}
+
+h1 {
+    margin: 18px 0 12px;
+}
+
+.control {
+    width: 850px;
+    max-width: 95%;
+    margin: auto;
+    padding: 15px;
+    background: #121a29;
+    border-radius: 15px;
+}
+
+textarea {
+    width: 100%;
+    height: 110px;
+    resize: none;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #080d16;
+    color: white;
+    font-size: 16px;
+    outline: none;
+}
+
+button {
+    margin-top: 10px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.startBtn {
+    background: #22c55e;
+    color: white;
+}
+
+.resetBtn {
+    background: #ef4444;
+    color: white;
+    margin-left: 5px;
+}
+
+#info {
+    margin-top: 10px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+#timer {
+    margin-top: 8px;
+    font-size: 27px;
+    font-weight: bold;
+    color: #60a5fa;
+}
+
+#result {
+    min-height: 50px;
+    margin: 15px;
+    font-size: 32px;
+    font-weight: bold;
+    color: #facc15;
+}
+
+
+/* ================================
+   핀볼
+================================ */
+
+#game {
+    position: relative;
+
+    width: 850px;
+    height: 1000px;
+
+    max-width: 95%;
+
+    margin: 20px auto;
+
+    overflow: hidden;
+
+    border: 4px solid #334155;
+
+    border-radius: 16px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #111a2b,
+            #05080e
+        );
+
+    box-shadow:
+        0 0 35px rgba(0,0,0,.7);
+}
+
+
+/* ================================
+   START
+================================ */
+
+.startText {
+    position: absolute;
+
+    top: 12px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    color: #60a5fa;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    z-index: 30;
+}
+
+.startLine {
+    position: absolute;
+
+    top: 47px;
+
+    left: 20px;
+    right: 20px;
+
+    border-top: 2px dashed #475569;
+
+    z-index: 5;
+}
+
+
+/* ================================
+   핀
+================================ */
+
+.pin {
+    position: absolute;
+
+    width: 12px;
+    height: 12px;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background: #facc15;
+
+    box-shadow:
+        0 0 9px rgba(250,204,21,.85);
+
+    z-index: 3;
+}
+
+
+/* ================================
+   특수핀
+   빨간핀 → 흰색
+================================ */
+
+.redPin {
+    position: absolute;
+
+    width: 12px;
+    height: 12px;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    border: 1px solid #ffffff;
+
+    box-shadow:
+        0 0 14px rgba(255,255,255,.95);
+
+    z-index: 4;
+}
+
+
+/* ================================
+   공
+================================ */
+
+.ball {
+    position: absolute;
+
+    width: 32px;
+    height: 32px;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background: #f8fafc;
+
+    border: 3px solid #60a5fa;
+
+    box-shadow:
+        0 0 12px #60a5fa;
+
+    color: #111827;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 8px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    z-index: 10;
+}
+
+
+/* ================================
+   당첨
+================================ */
+
+.ball.winner {
+    background: #22c55e;
+
+    border-color: #facc15;
+
+    box-shadow:
+        0 0 35px #22c55e,
+        0 0 15px #facc15;
+
+    transform:
+        translate(-50%, -50%)
+        scale(1.5);
+}
+
+
+/* ================================
+   FINISH 깔때기
+================================ */
+
+.finishArea {
+    position: absolute;
+
+    left: 50%;
+    bottom: 0;
+
+    transform: translateX(-50%);
+
+    width: 180px;
+    height: 70px;
+
+    background:
+        rgba(34,197,94,.08);
+
+    border-top:
+        3px solid #22c55e;
+
+    z-index: 2;
+}
+
+.finishText {
+    position: absolute;
+
+    left: 50%;
+    bottom: 40px;
+
+    transform: translateX(-50%);
+
+    color: #22c55e;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    z-index: 20;
+}
+
+
+/* ================================
+   깔때기 벽
+================================ */
+
+.funnelLeft {
+    position: absolute;
+
+    width: 6px;
+    height: 145px;
+
+    left:
+        calc(50% - 180px);
+
+    bottom: 0;
+
+    background: #475569;
+
+    transform:
+        rotate(-18deg);
+
+    transform-origin: bottom;
+
+    z-index: 8;
+}
+
+.funnelRight {
+    position: absolute;
+
+    width: 6px;
+    height: 145px;
+
+    right:
+        calc(50% - 180px);
+
+    bottom: 0;
+
+    background: #475569;
+
+    transform:
+        rotate(18deg);
+
+    transform-origin: bottom;
+
+    z-index: 8;
+}
+
+
+/* ================================
+   흰색 귀환 바닥
+================================ */
+
+.returnFloor {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+
+    bottom: 0;
+
+    height: 9px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 8px rgba(255,255,255,.8);
+
+    z-index: 7;
+}
+
+
+/* ================================
+   귀환 방향 표시
+================================ */
+
+.returnLeft {
+    position: absolute;
+
+    left: 30px;
+    bottom: 16px;
+
+    color: #ffffff;
+
+    font-size: 11px;
+
+    opacity: .7;
+
+    z-index: 15;
+}
+
+.returnRight {
+    position: absolute;
+
+    right: 30px;
+    bottom: 16px;
+
+    color: #ffffff;
+
+    font-size: 11px;
+
+    opacity: .7;
+
+    z-index: 15;
+}
+
+
+/* ================================
+   중앙 FINISH 바닥
+================================ */
+
+.finishBottom {
+    position: absolute;
+
+    left: 50%;
+
+    bottom: 0;
+
+    transform: translateX(-50%);
+
+    width: 180px;
+
+    height: 9px;
+
+    background: #22c55e;
+
+    box-shadow:
+        0 0 12px #22c55e;
+
+    z-index: 10;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<h1>🎱 핀볼 물리 추첨 시스템</h1>
+
+
+<div class="control">
+
+<textarea id="names"
+placeholder="이름을 한 줄에 한 명씩 입력하세요.
+
+김민수
+이서준
+박지훈
+최유진
+정승빈
+홍길동"></textarea>
+
+<br>
+
+<button class="startBtn" onclick="startGame()">
+🎯 추첨 시작
+</button>
+
+<button class="resetBtn" onclick="resetGame()">
+🔄 초기화
+</button>
+
+<div id="info">
+이름을 입력하고 추첨을 시작하세요.
+</div>
+
+<div id="timer">
+01:00
+</div>
+
+</div>
+
+
+<div id="result">-</div>
+
+
+<div id="game">
+
+    <!-- START -->
+
+    <div class="startText">
+        START LINE
+    </div>
+
+    <div class="startLine"></div>
+
+
+    <!-- FINISH -->
+
+    <div class="finishArea"></div>
+
+    <div class="finishText">
+        ★ FINISH ★
+    </div>
+
+
+    <!-- 깔때기 -->
+
+    <div class="funnelLeft"></div>
+
+    <div class="funnelRight"></div>
+
+
+    <!-- 흰색 귀환 바닥 -->
+
+    <div class="returnFloor"></div>
+
+    <div class="finishBottom"></div>
+
+
+    <div class="returnLeft">
+        ← RETURN
+    </div>
+
+    <div class="returnRight">
+        RETURN →
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   기본 설정
+========================================= */
+
+const WIDTH = 850;
+const HEIGHT = 1000;
+
+const BALL_RADIUS = 16;
+const PIN_RADIUS = 6;
+
+const START_Y = 32;
+
+const GRAVITY = 0.035;
+
+const MAX_SPEED = 2.2;
+
+const PIN_BOUNCE = 0.78;
+
+const BALL_BOUNCE = 0.65;
+
+
+/* =========================================
+   FINISH 영역
+========================================= */
+
+const FINISH_LEFT =
+    WIDTH / 2 - 90;
+
+const FINISH_RIGHT =
+    WIDTH / 2 + 90;
+
+const FINISH_Y =
+    HEIGHT - 70;
+
+
+/* =========================================
+   게임 변수
+========================================= */
+
+let pins = [];
+let redPins = [];
+let balls = [];
+
+let running = false;
+
+let animationFrame = null;
+let timerInterval = null;
+
+let startTime = 0;
+
+
+/* =========================================
+   핀 생성
+========================================= */
+
+function createPins() {
+
+    const game =
+        document.getElementById("game");
+
+
+    game
+        .querySelectorAll(".pin, .redPin")
+        .forEach(e => e.remove());
+
+
+    pins = [];
+    redPins = [];
+
+
+    const horizontalGap = 65;
+    const verticalGap = 48;
+
+    const startX = 60;
+    const endX = WIDTH - 60;
+
+    const startY = 100;
+
+
+    const upperPins = [];
+    const lowerPins = [];
+
+
+    for (
+        let row = 0;
+        row < 16;
+        row++
+    ) {
+
+        const y =
+            startY +
+            row * verticalGap;
+
+
+        const offset =
+            row % 2 === 0
+            ? 0
+            : horizontalGap / 2;
+
+
+        for (
+            let x = startX + offset;
+            x <= endX;
+            x += horizontalGap
+        ) {
+
+
+            /*
+               FINISH 깔때기 주변은
+               핀을 비워둔다
+            */
+
+            if (
+                y > 820 &&
+                x > FINISH_LEFT - 30 &&
+                x < FINISH_RIGHT + 30
+            ) {
+                continue;
+            }
+
+
+            const pin = {
+                x: x,
+                y: y,
+                red: false
+            };
+
+
+            pins.push(pin);
+
+
+            if (y < 500) {
+                upperPins.push(pin);
+            }
+            else {
+                lowerPins.push(pin);
+            }
+
+
+            const element =
+                document.createElement("div");
+
+            element.className = "pin";
+
+            element.style.left =
+                x + "px";
+
+            element.style.top =
+                y + "px";
+
+            game.appendChild(element);
+        }
+    }
+
+
+    /* ================================
+       상단 10%
+    ================================= */
+
+    const upperCount =
+        Math.max(
+            1,
+            Math.round(
+                upperPins.length * 0.10
+            )
+        );
+
+
+    [...upperPins]
+        .sort(
+            () => Math.random() - 0.5
+        )
+        .slice(0, upperCount)
+        .forEach(pin => {
+
+            makeRedPin(
+                pin,
+                game
+            );
+
+        });
+
+
+    /* ================================
+       하단 20%
+    ================================= */
+
+    const lowerCount =
+        Math.max(
+            1,
+            Math.round(
+                lowerPins.length * 0.20
+            )
+        );
+
+
+    [...lowerPins]
+        .sort(
+            () => Math.random() - 0.5
+        )
+        .slice(0, lowerCount)
+        .forEach(pin => {
+
+            makeRedPin(
+                pin,
+                game
+            );
+
+        });
+}
+
+
+/* =========================================
+   특수핀
+========================================= */
+
+function makeRedPin(pin, game) {
+
+    pin.red = true;
+
+    const element =
+        document.createElement("div");
+
+    element.className = "redPin";
+
+    element.style.left =
+        pin.x + "px";
+
+    element.style.top =
+        pin.y + "px";
+
+    game.appendChild(element);
+
+    redPins.push(pin);
+}
+
+
+/* =========================================
+   시작 위치 랜덤 X
+========================================= */
+
+function getRandomStartX() {
+
+    return (
+        BALL_RADIUS + 10 +
+        Math.random() *
+        (
+            WIDTH -
+            BALL_RADIUS * 2 -
+            20
+        )
+    );
+}
+
+
+/* =========================================
+   공 생성
+========================================= */
+
+function createBalls(names) {
+
+    const game =
+        document.getElementById("game");
+
+
+    balls = [];
+
+
+    names.forEach(name => {
+
+        /*
+           Y는 항상 START_Y
+           X만 랜덤
+        */
+
+        const x =
+            getRandomStartX();
+
+
+        const y =
+            START_Y;
+
+
+        const element =
+            document.createElement("div");
+
+
+        element.className = "ball";
+
+        element.textContent = name;
+
+
+        element.style.left =
+            x + "px";
+
+        element.style.top =
+            y + "px";
+
+
+        game.appendChild(element);
+
+
+        balls.push({
+
+            name: name,
+
+            x: x,
+
+            y: y,
+
+            startY: START_Y,
+
+            vx:
+                (Math.random() - 0.5)
+                * 0.15,
+
+            vy: 0,
+
+            element: element,
+
+            resetCooldown: 0,
+
+            finished: false
+
+        });
+
+    });
+}
+
+
+/* =========================================
+   랜덤 START 복귀
+========================================= */
+
+function resetBallToStart(ball) {
+
+    /*
+       세로 위치는
+       기존 START와 동일
+    */
+
+    ball.y =
+        START_Y;
+
+
+    /*
+       X만 랜덤 변경
+    */
+
+    ball.x =
+        getRandomStartX();
+
+
+    /*
+       다시 떨어지기 시작
+    */
+
+    ball.vx =
+        (Math.random() - 0.5)
+        * 0.15;
+
+    ball.vy = 0;
+
+
+    /*
+       특수핀 연속 충돌 방지
+    */
+
+    ball.resetCooldown = 60;
+}
+
+
+/* =========================================
+   특수핀 충돌
+========================================= */
+
+function checkRedPinCollision(ball) {
+
+    if (
+        ball.resetCooldown > 0
+    ) {
+
+        ball.resetCooldown--;
+
+        return false;
+    }
+
+
+    for (const pin of redPins) {
+
+        const dx =
+            ball.x - pin.x;
+
+        const dy =
+            ball.y - pin.y;
+
+
+        const distance =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        if (
+            distance <
+            BALL_RADIUS + PIN_RADIUS
+        ) {
+
+            resetBallToStart(ball);
+
+            return true;
+        }
+    }
+
+
+    return false;
+}
+
+
+/* =========================================
+   일반 핀 충돌
+========================================= */
+
+function checkPinCollision(ball) {
+
+    for (const pin of pins) {
+
+        const dx =
+            ball.x - pin.x;
+
+        const dy =
+            ball.y - pin.y;
+
+
+        const distance =
+            Math.sqrt(
+                dx * dx +
+                dy * dy
+            );
+
+
+        const minDistance =
+            BALL_RADIUS +
+            PIN_RADIUS;
+
+
+        if (
+            distance < minDistance
+        ) {
+
+            let nx =
+                dx / distance;
+
+            let ny =
+                dy / distance;
+
+
+            if (!isFinite(nx)) {
+
+                nx = 0;
+                ny = -1;
+            }
+
+
+            const overlap =
+                minDistance -
+                distance;
+
+
+            /*
+               핀과 겹치지 않도록
+               공을 밖으로 밀어냄
+            */
+
+            ball.x +=
+                nx * overlap;
+
+            ball.y +=
+                ny * overlap;
+
+
+            /*
+               반사
+            */
+
+            const dot =
+                ball.vx * nx +
+                ball.vy * ny;
+
+
+            ball.vx -=
+                2 * dot * nx;
+
+            ball.vy -=
+                2 * dot * ny;
+
+
+            ball.vx *=
+                PIN_BOUNCE;
+
+            ball.vy *=
+                PIN_BOUNCE;
+
+
+            /*
+               약간의 랜덤성
+            */
+
+            ball.vx +=
+                (Math.random() - 0.5)
+                * 0.06;
+        }
+    }
+}
+
+
+/* =========================================
+   공끼리 충돌
+========================================= */
+
+function checkBallCollisions() {
+
+    for (
+        let i = 0;
+        i < balls.length;
+        i++
+    ) {
+
+        const a =
+            balls[i];
+
+
+        if (a.finished) {
+            continue;
+        }
+
+
+        for (
+            let j = i + 1;
+            j < balls.length;
+            j++
+        ) {
+
+            const b =
+                balls[j];
+
+
+            if (b.finished) {
+                continue;
+            }
+
+
+            const dx =
+                b.x - a.x;
+
+            const dy =
+                b.y - a.y;
+
+
+            const distance =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            const minDistance =
+                BALL_RADIUS * 2;
+
+
+            if (
+                distance < minDistance &&
+                distance > 0
+            ) {
+
+                const nx =
+                    dx / distance;
+
+                const ny =
+                    dy / distance;
+
+
+                const overlap =
+                    minDistance -
+                    distance;
+
+
+                a.x -=
+                    nx * overlap / 2;
+
+                a.y -=
+                    ny * overlap / 2;
+
+
+                b.x +=
+                    nx * overlap / 2;
+
+                b.y +=
+                    ny * overlap / 2;
+
+
+                const rvx =
+                    b.vx - a.vx;
+
+                const rvy =
+                    b.vy - a.vy;
+
+
+                const velocity =
+                    rvx * nx +
+                    rvy * ny;
+
+
+                if (
+                    velocity > 0
+                ) {
+                    continue;
+                }
+
+
+                const impulse =
+                    -(1 + BALL_BOUNCE)
+                    * velocity / 2;
+
+
+                const ix =
+                    impulse * nx;
+
+                const iy =
+                    impulse * ny;
+
+
+                a.vx -= ix;
+                a.vy -= iy;
+
+                b.vx += ix;
+                b.vy += iy;
+            }
+        }
+    }
+}
+
+
+/* =========================================
+   벽 충돌
+========================================= */
+
+function wallCollision(ball) {
+
+    if (
+        ball.x < BALL_RADIUS
+    ) {
+
+        ball.x =
+            BALL_RADIUS;
+
+        ball.vx =
+            Math.abs(ball.vx) * 0.75;
+    }
+
+
+    if (
+        ball.x >
+        WIDTH - BALL_RADIUS
+    ) {
+
+        ball.x =
+            WIDTH - BALL_RADIUS;
+
+        ball.vx =
+            -Math.abs(ball.vx) * 0.75;
+    }
+
+
+    if (
+        ball.y < BALL_RADIUS
+    ) {
+
+        ball.y =
+            BALL_RADIUS;
+
+        ball.vy =
+            Math.abs(ball.vy) * 0.75;
+    }
+}
+
+
+/* =========================================
+   벽-핀 끼임 방지
+========================================= */
+
+function preventTrap(ball) {
+
+    const margin = 42;
+
+
+    if (
+        ball.x <
+        BALL_RADIUS + 5
+    ) {
+
+        ball.x =
+            BALL_RADIUS + 5;
+
+        ball.vx =
+            Math.abs(ball.vx) + 0.03;
+    }
+
+
+    if (
+        ball.x >
+        WIDTH -
+        BALL_RADIUS -
+        5
+    ) {
+
+        ball.x =
+            WIDTH -
+            BALL_RADIUS -
+            5;
+
+        ball.vx =
+            -Math.abs(ball.vx) - 0.03;
+    }
+
+
+    /*
+       양쪽 벽 가까운 핀에
+       공이 끼지 않도록 처리
+    */
+
+    for (const pin of pins) {
+
+        if (
+            pin.x < margin
+        ) {
+
+            const dx =
+                ball.x - pin.x;
+
+            const dy =
+                ball.y - pin.y;
+
+            const distance =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            if (
+                distance <
+                BALL_RADIUS + PIN_RADIUS
+            ) {
+
+                ball.x =
+                    pin.x +
+                    BALL_RADIUS +
+                    PIN_RADIUS +
+                    2;
+            }
+        }
+
+
+        if (
+            pin.x >
+            WIDTH - margin
+        ) {
+
+            const dx =
+                ball.x - pin.x;
+
+            const dy =
+                ball.y - pin.y;
+
+            const distance =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy
+                );
+
+
+            if (
+                distance <
+                BALL_RADIUS + PIN_RADIUS
+            ) {
+
+                ball.x =
+                    pin.x -
+                    BALL_RADIUS -
+                    PIN_RADIUS -
+                    2;
+            }
+        }
+    }
+}
+
+
+/* =========================================
+   깔때기 물리
+========================================= */
+
+function funnelPhysics(ball) {
+
+    /*
+       FINISH 깔때기 위쪽에서
+       중앙 방향으로 조금씩 유도
+    */
+
+    if (
+        ball.y > HEIGHT - 190
+    ) {
+
+        if (
+            ball.x < FINISH_LEFT
+        ) {
+
+            ball.vx += 0.025;
+        }
+
+
+        if (
+            ball.x > FINISH_RIGHT
+        ) {
+
+            ball.vx -= 0.025;
+        }
+    }
+}
+
+
+/* =========================================
+   바깥 바닥 → START 귀환
+========================================= */
+
+function returnFromFloor(ball) {
+
+    /*
+       FINISH 바깥쪽 바닥에 닿으면
+       즉시 START로 돌아감.
+
+       중앙 FINISH 구역은 제외.
+    */
+
+    if (
+        ball.y >
+        HEIGHT - 25
+    ) {
+
+        /*
+           중앙이면 FINISH 판정에서
+           먼저 처리하기 때문에 여기로
+           오지 않음
+        */
+
+        if (
+            ball.x < FINISH_LEFT ||
+            ball.x > FINISH_RIGHT
+        ) {
+
+            resetBallToStart(ball);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/* =========================================
+   FINISH 판정
+========================================= */
+
+function checkFinish(ball) {
+
+    if (
+        ball.y >= FINISH_Y &&
+        ball.x >= FINISH_LEFT &&
+        ball.x <= FINISH_RIGHT
+    ) {
+
+        finishWinner(ball);
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+/* =========================================
+   우승
+========================================= */
+
+function finishWinner(ball) {
+
+    if (!running) {
+        return;
+    }
+
+
+    running = false;
+
+
+    if (timerInterval) {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
+    }
+
+
+    if (animationFrame) {
+
+        cancelAnimationFrame(
+            animationFrame
+        );
+
+        animationFrame = null;
+    }
+
+
+    ball.finished = true;
+
+
+    ball.element.classList.add(
+        "winner"
+    );
+
+
+    document.getElementById(
+        "result"
+    ).textContent =
+        "🏆 " +
+        ball.name +
+        " 당첨!";
+
+
+    document.getElementById(
+        "info"
+    ).textContent =
+        "FINISH에 가장 먼저 도착했습니다!";
+}
+
+
+/* =========================================
+   속도 제한
+========================================= */
+
+function limitSpeed(ball) {
+
+    const speed =
+        Math.sqrt(
+            ball.vx * ball.vx +
+            ball.vy * ball.vy
+        );
+
+
+    if (
+        speed > MAX_SPEED
+    ) {
+
+        const ratio =
+            MAX_SPEED / speed;
+
+        ball.vx *= ratio;
+        ball.vy *= ratio;
+    }
+}
+
+
+/* =========================================
+   물리 업데이트
+========================================= */
+
+function update() {
+
+    if (!running) {
+        return;
+    }
+
+
+    for (const ball of balls) {
+
+        if (ball.finished) {
+            continue;
+        }
+
+
+        /*
+           중력
+        */
+
+        ball.vy +=
+            GRAVITY;
+
+
+        /*
+           이동
+        */
+
+        ball.x +=
+            ball.vx;
+
+        ball.y +=
+            ball.vy;
+
+
+        /*
+           벽
+        */
+
+        wallCollision(ball);
+
+
+        /*
+           특수핀
+        */
+
+        if (
+            checkRedPinCollision(ball)
+        ) {
+
+            ball.element.style.left =
+                ball.x + "px";
+
+            ball.element.style.top =
+                ball.y + "px";
+
+            continue;
+        }
+
+
+        /*
+           일반 핀
+        */
+
+        checkPinCollision(ball);
+
+
+        /*
+           공 끼임 방지
+        */
+
+        preventTrap(ball);
+
+
+        /*
+           깔때기
+        */
+
+        funnelPhysics(ball);
+
+
+        /*
+           FINISH
+        */
+
+        if (
+            checkFinish(ball)
+        ) {
+
+            return;
+        }
+
+
+        /*
+           바닥 귀환
+        */
+
+        if (
+            returnFromFloor(ball)
+        ) {
+
+            ball.element.style.left =
+                ball.x + "px";
+
+            ball.element.style.top =
+                ball.y + "px";
+
+            continue;
+        }
+
+
+        /*
+           속도 제한
+        */
+
+        limitSpeed(ball);
+
+
+        /*
+           화면 표시
+        */
+
+        ball.element.style.left =
+            ball.x + "px";
+
+        ball.element.style.top =
+            ball.y + "px";
+    }
+
+
+    /*
+       공끼리 충돌
+    */
+
+    checkBallCollisions();
+
+
+    /*
+       화면 위치 업데이트
+    */
+
+    for (const ball of balls) {
+
+        if (!ball.finished) {
+
+            ball.element.style.left =
+                ball.x + "px";
+
+            ball.element.style.top =
+                ball.y + "px";
+        }
+    }
+
+
+    animationFrame =
+        requestAnimationFrame(update);
+}
+
+
+/* =========================================
+   60초 종료
+========================================= */
+
+function timeOutWinner() {
+
+    if (!running) {
+        return;
+    }
+
+
+    running = false;
+
+
+    if (animationFrame) {
+
+        cancelAnimationFrame(
+            animationFrame
+        );
+
+        animationFrame = null;
+    }
+
+
+    if (timerInterval) {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
+    }
+
+
+    /*
+       60초 순간
+       가장 아래쪽 공
+    */
+
+    let winner = null;
+
+
+    for (const ball of balls) {
+
+        if (
+            winner === null ||
+            ball.y > winner.y
+        ) {
+
+            winner = ball;
+        }
+    }
+
+
+    if (winner) {
+
+        winner.element.classList.add(
+            "winner"
+        );
+
+
+        document.getElementById(
+            "result"
+        ).textContent =
+            "🏆 " +
+            winner.name +
+            " 당첨!";
+
+
+        document.getElementById(
+            "info"
+        ).textContent =
+            "60초 동안 FINISH에 도착하지 않아 가장 아래에 있던 사람이 우승했습니다.";
+    }
+
+
+    document.getElementById(
+        "timer"
+    ).textContent =
+        "00:00";
+}
+
+
+/* =========================================
+   타이머
+========================================= */
+
+function startTimer() {
+
+    startTime =
+        Date.now();
+
+
+    timerInterval =
+        setInterval(() => {
+
+            if (!running) {
+                return;
+            }
+
+
+            const elapsed =
+                Date.now() -
+                startTime;
+
+
+            const remaining =
+                Math.max(
+                    0,
+                    60000 - elapsed
+                );
+
+
+            const seconds =
+                Math.ceil(
+                    remaining / 1000
+                );
+
+
+            document.getElementById(
+                "timer"
+            ).textContent =
+                "00:" +
+                String(seconds)
+                    .padStart(2, "0");
+
+
+            if (
+                elapsed >= 60000
+            ) {
+
+                timeOutWinner();
+            }
+
+        }, 30);
+}
+
+
+/* =========================================
+   게임 시작
+========================================= */
+
+function startGame() {
+
+    if (running) {
+        return;
+    }
+
+
+    const text =
+        document.getElementById(
+            "names"
+        ).value;
+
+
+    const names =
+        text
+            .split("\n")
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
+
+
+    if (
+        names.length === 0
+    ) {
+
+        alert(
+            "이름을 입력해주세요!"
+        );
+
+        return;
+    }
+
+
+    /*
+       기존 공 제거
+    */
+
+    document
+        .querySelectorAll(".ball")
+        .forEach(e => e.remove());
+
+
+    /*
+       결과 초기화
+    */
+
+    document.getElementById(
+        "result"
+    ).textContent = "-";
+
+
+    document.getElementById(
+        "timer"
+    ).textContent = "01:00";
+
+
+    /*
+       매판 핀 위치 랜덤
+    */
+
+    createPins();
+
+
+    /*
+       공 생성
+       START_Y는 동일
+       X는 랜덤
+    */
+
+    createBalls(names);
+
+
+    running = true;
+
+
+    document.getElementById(
+        "info"
+    ).textContent =
+        "추첨 시작! FINISH에 먼저 도착하세요.";
+
+
+    update();
+
+    startTimer();
+}
+
+
+/* =========================================
+   초기화
+========================================= */
+
+function resetGame() {
+
+    running = false;
+
+
+    if (animationFrame) {
+
+        cancelAnimationFrame(
+            animationFrame
+        );
+
+        animationFrame = null;
+    }
+
+
+    if (timerInterval) {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
+    }
+
+
+    document
+        .querySelectorAll(".ball")
+        .forEach(e => e.remove());
+
+
+    balls = [];
+
+
+    document.getElementById(
+        "result"
+    ).textContent = "-";
+
+
+    document.getElementById(
+        "timer"
+    ).textContent = "01:00";
+
+
+    document.getElementById(
+        "info"
+    ).textContent =
+        "이름을 입력하고 추첨을 시작하세요.";
+
+
+    createPins();
+}
+
+
+/* =========================================
+   최초 실행
+========================================= */
+
+createPins();
+
+</script>
+
+</body>
+</html>
